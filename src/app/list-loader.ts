@@ -23,7 +23,7 @@ interface PaginateListAccumulator<T> extends ListResponseItems<T> {
   request: ListPaged;
 }
 
-export class PaginateListLoader<T> {
+export class PaginateListLoader<T, R> {
   private _baseSubject: Subject<ListPaged>;
   private _nextPageSubject: Subject<ListPaged>;
   private _items$: Observable<ListResponseItems<T>>;
@@ -48,7 +48,7 @@ export class PaginateListLoader<T> {
     this._nextPageSubject.next({ next: true });
   }
 
-  public loadData(request: ListPaged): void {
+  public loadData(request: R): void {
     this._baseSubject.next(request);
   }
 

@@ -17,7 +17,7 @@ import { PaginateListLoader } from './list-loader';
 export class AppComponent implements OnInit {
   title = 'paginate-operator';
 
-  dataFactorySub: PaginateListLoader<FancyObject>;
+  listLoader: PaginateListLoader<FancyObject, MyDataRequest>;
 
   constructor(private dataFactoryService: DataFactoryService) {
     const paginate = (request: MyDataRequest) => {
@@ -26,7 +26,7 @@ export class AppComponent implements OnInit {
         .pipe(this.afterFancyItemsLoad());
     };
 
-    this.dataFactorySub = new PaginateListLoader(paginate);
+    this.listLoader = new PaginateListLoader(paginate);
   }
 
   ngOnInit() {}
@@ -42,10 +42,10 @@ export class AppComponent implements OnInit {
   }
 
   getNewData() {
-    this.dataFactorySub.loadData({ page: { number: 0, size: 10 } });
+    this.listLoader.loadData({ page: { number: 0, size: 10 } });
   }
 
   getNextPage() {
-    this.dataFactorySub.loadNextPage();
+    this.listLoader.loadNextPage();
   }
 }
