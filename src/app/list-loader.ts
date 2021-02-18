@@ -1,5 +1,5 @@
-import { defer, EMPTY, Observable, ObservableInput } from 'rxjs';
-import { exhaustMap, map, tap } from 'rxjs/operators';
+import { defer, EMPTY, Observable, ObservableInput, Subject } from 'rxjs';
+import { exhaustMap, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { Paging } from './data-factory.service';
 
 export interface ListPaged {
@@ -23,65 +23,39 @@ interface PaginateListAccumulator<T> extends ListResponseItems<T> {
   request: ListPaged;
 }
 
-// First draft
-// It aint much, but its honest work
-/* export function ListLoader2<T>(
-  dataLoader: (request: ListPaged) => Observable<ListResponseItems<T>>
-) {
-  let nextPage$: Subject<any> = null;
+export class PaginateListLoader<T> {
+  private _baseSubject: Subject<ListPaged>;
+  private _nextPageSubject: Subject<ListPaged>;
+  private _items$: Observable<ListResponseItems<T>>;
 
-  this.valueChanges = new Subject<ListResponseItems<T>>();
+  constructor(
+    paginate: (request: ListPaged) => Observable<ListResponseItems<T>>
+  ) {
+    this._baseSubject = new Subject<ListPaged>();
+    this._nextPageSubject = new Subject<ListPaged>();
 
-  this.nextPage = () => {
-    if (nextPage$) {
-      nextPage$.next();
-    }
-  };
-
-  this.load = (request: ListPaged) => {
-    return dataLoader(request).pipe(
-      tap((response: ListResponseItems<T>) => {
-        nextPage$ = new Subject<null>();
-        this.valueChanges.next(response);
-        if (response.paging.pagesCount <= 1) {
-          console.log('complete()');
-          nextPage$.complete();
-        }
-      }),
-      map((response: ListResponseItems<T>) => ({
-        ...response,
-        currentPage: request.page.number,
-      })),
-      exhaustMap((basicResponse: ListResponseItems<T>) => {
-        return nextPage$.pipe(
-          exhaustScan((acc, curr) => {
-            console.log('nowy acc: ', acc);
-            const nextPageNumber = acc.currentPage + 1;
-            return dataLoader({
-              ...request,
-              page: { ...request.page, number: nextPageNumber },
-            }).pipe(
-              map((response) => ({
-                ...response,
-                items: [...acc.items, ...response.items],
-                currentPage: nextPageNumber,
-              }))
-            );
-          }, basicResponse),
-          tap((response: ListResponseItems<T>) => {
-            this.valueChanges.next(response);
-
-            console.log('FinalResponse: ', response);
-            if (response.paging.pagesCount <= response.currentPage) {
-              console.log('complete()');
-              nextPage$.complete();
-            }
-          })
+    this._items$ = this._baseSubject.pipe(
+      switchMap((req) => {
+        return this._nextPageSubject.pipe(
+          startWith(req),
+          paginateList(paginate)
         );
       })
     );
-  };
-} */
+  }
+
+  public loadNextPage(): void {
+    this._nextPageSubject.next({ next: true });
+  }
+
+  public loadData(request: ListPaged): void {
+    this._baseSubject.next(request);
+  }
+
+  get items$(): Observable<ListResponseItems<T>> {
+    return this._items$;
+  }
+}
 
 export function paginateList<R>(
   dataLoader: (request: ListPaged) => Observable<ListResponseItems<R>>

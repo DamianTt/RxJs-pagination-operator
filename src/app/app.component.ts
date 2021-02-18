@@ -1,5 +1,5 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Component, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   DataFactoryService,
@@ -7,7 +7,7 @@ import {
   MyDataRequest,
   MyDataResponse,
 } from './data-factory.service';
-import { ListPaged, ListResponseItems, paginateList } from './list-loader';
+import { PaginateListLoader } from './list-loader';
 
 @Component({
   selector: 'app-root',
@@ -17,40 +17,19 @@ import { ListPaged, ListResponseItems, paginateList } from './list-loader';
 export class AppComponent implements OnInit {
   title = 'paginate-operator';
 
-  // fancyItemLoader;
+  dataFactorySub: PaginateListLoader<FancyObject>;
 
-  fancyItemSubject: Subject<ListPaged>;
+  constructor(private dataFactoryService: DataFactoryService) {
+    const paginate = (request: MyDataRequest) => {
+      return this.dataFactoryService
+        .getData(request)
+        .pipe(this.afterFancyItemsLoad());
+    };
 
-  fancyItem$: Observable<ListResponseItems<FancyObject>>;
-
-  constructor(
-    private dataFactoryService: DataFactoryService,
-    private cdr: ChangeDetectorRef
-  ) {}
-
-  ngOnInit() {
-    // this.fancyItemLoader = new ListLoader1<FancyObject>(
-    //   (request: MyDataRequest) =>
-    //     this.dataFactoryService
-    //       .getData(request)
-    //       .pipe(this.afterFancyItemsLoad())
-    // );
+    this.dataFactorySub = new PaginateListLoader(paginate);
   }
 
-  initStreams() {
-    if (this.fancyItemSubject) {
-      this.fancyItemSubject.complete();
-    }
-    this.fancyItemSubject = new Subject<ListPaged>();
-    this.fancyItem$ = this.fancyItemSubject.pipe(
-      paginateList((request: MyDataRequest) =>
-        this.dataFactoryService
-          .getData(request)
-          .pipe(this.afterFancyItemsLoad())
-      )
-    );
-    this.cdr.detectChanges();
-  }
+  ngOnInit() {}
 
   afterFancyItemsLoad() {
     return (source$: Observable<MyDataResponse>) =>
@@ -63,15 +42,10 @@ export class AppComponent implements OnInit {
   }
 
   getNewData() {
-    // this.fancyItemLoader.load({ page: { number: 0, size: 10 } }).subscribe;
-
-    this.initStreams();
-    this.fancyItemSubject.next({ page: { number: 0, size: 10 } });
+    this.dataFactorySub.loadData({ page: { number: 0, size: 10 } });
   }
 
   getNextPage() {
-    if (this.fancyItemSubject) {
-      this.fancyItemSubject.next({ next: true });
-    }
+    this.dataFactorySub.loadNextPage();
   }
 }

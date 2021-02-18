@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 import { delay } from 'rxjs/operators';
-import { ListPaged } from './list-loader';
+import { ListPaged, ListResponseItems } from './list-loader';
 
 export interface MyDataResponse {
   data: {
@@ -29,6 +29,10 @@ export class DataFactoryService {
   constructor() {}
 
   getData(request: MyDataRequest): Observable<MyDataResponse> {
+    let delayy = 50;
+    if (request.page.number > 0 ) {
+      delayy = 500;
+    }
     const recordsCount = 84;
     return of({
       data: {
@@ -42,7 +46,7 @@ export class DataFactoryService {
           recordsCount
         ),
       },
-    }).pipe(delay(500));
+    }).pipe(delay(delayy));
   }
 
   fancyItemsGenerator(

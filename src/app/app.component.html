@@ -9,7 +9,7 @@
 
   <div class="list-container">
     <ul>
-      <li *ngFor="let item of (fancyItem$ | async)?.items">{{item.name}}</li>
+      <li *ngFor="let item of (dataFactorySub.items$ | async)?.items">{{item.name}}</li>
     </ul>
   </div>
 </div>
