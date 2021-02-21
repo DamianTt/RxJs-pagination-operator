@@ -7,7 +7,10 @@ import {
   MyDataRequest,
   MyDataResponse,
 } from './data-factory.service';
-import { PaginateListLoader } from './list-loader';
+import {
+  ListResponseItems,
+  PaginateListLoader,
+} from './list-loader';
 
 @Component({
   selector: 'app-root',
@@ -17,7 +20,7 @@ import { PaginateListLoader } from './list-loader';
 export class AppComponent implements OnInit {
   title = 'paginate-operator';
 
-  listLoader: PaginateListLoader<FancyObject, MyDataRequest>;
+  listLoader: PaginateListLoader<FancyObject>;
 
   constructor(private dataFactoryService: DataFactoryService) {
     const paginate = (request: MyDataRequest) => {
@@ -33,19 +36,31 @@ export class AppComponent implements OnInit {
 
   afterFancyItemsLoad() {
     return (source$: Observable<MyDataResponse>) =>
-      source$.pipe(
-        map((response) => ({
-          items: response.data.fancyItems,
-          paging: response.data.paging,
-        }))
-      );
+      source$.pipe(map(this.fancyItemMapper));
   }
 
+  fancyItemMapper = (
+    response: MyDataResponse
+  ): ListResponseItems<FancyObject> => ({
+    items: response.data.fancyItems,
+    paging: response.data.paging,
+  });
+
   getNewData() {
-    this.listLoader.loadData({ page: { number: 0, size: 10 } });
+    this.listLoader.loadData({ request: { page: { number: 0, size: 15 } } });
   }
 
   getNextPage() {
     this.listLoader.loadNextPage();
+  }
+
+  initData() {
+    const request: MyDataRequest = { page: { number: 0, size: 10 } };
+    this.dataFactoryService.getData(request).subscribe((response) => {
+      this.listLoader.initData({
+        request: request,
+        initData: this.fancyItemMapper(response),
+      });
+    });
   }
 }
